@@ -1,0 +1,130 @@
+﻿@page "/weather"
+<!--  dyrektywa komponentu -->
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<PageTitle>Weather</PageTitle>
+
+<h1>Weather</h1>
+<!--  akapit z wyświetloną sumą ciepłych dni -->
+<p>Liczba ciepłych dni (powyżej 15°C): @warmDays</p>
+
+<!--  komponent do filtrowania po nazwie -->
+<div class="mb-3">
+    <input class="form-control" @oninput="FilterBySummary" placeholder="Wyszukaj po nazwie..." />
+</div>
+
+<!-- przyciski do filtrowania -->
+
+<div class="btn-group mb-3">
+    <button class="btn btn-primary" @onclick="FilterWarmDays">Pokaż tylko ciepłe dni</button>
+    <button class="btn btn-secondary" @onclick="RestoreForecasts">Przywróć wszystkie</button>
+</div>
+
+@if (forecasts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <!-- istniejąca tabela z danymi pogodowymi -->
+    </table>
+}
+<p>This component demonstrates showing data.</p>
+
+@if (forecasts == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Date</th>
+            <th>Temp. (C)</th>
+            <th>Temp. (F)</th>
+            <th>Summary</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var forecast in forecasts)
+        {
+            <tr>
+                <td>@forecast.Date.ToShortDateString()</td>
+                <td>@forecast.TemperatureC</td>
+                <td>@forecast.TemperatureF</td>
+                <td>@forecast.Summary</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private WeatherForecast[]? forecasts;
+    private WeatherForecast[]? originalForecasts;
+    
+    private int warmDays;//zmienna przechowująca liczbę ciepłych dni
+    
+    private static readonly string[] summaries = new[]
+    {
+        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {//wydłużenie prognozy do 10 dni
+        forecasts = Enumerable.Range(1, 10).Select(index => new WeatherForecast
+        {
+            Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+            TemperatureC = Random.Shared.Next(-20, 55),
+            Summary = summaries[Random.Shared.Next(summaries.Length)]
+        }).ToArray();
+       
+        //zliczenie ciepłych dni po wygenerowaniu
+        warmDays = forecasts.Count(f => f.TemperatureC > 15);
+        originalForecasts = forecasts;
+    }
+    
+    //funkcja filtrująca dni z temperaturą >15°C
+    private void FilterWarmDays()
+    {
+        forecasts = originalForecasts?.Where(f => f.TemperatureC > 15).ToArray();
+        
+    }
+    //funkcja przywracająca wszystkie dni
+    private void RestoreForecasts()
+    {
+        forecasts = originalForecasts;
+        //warmDays = forecasts?.Count(f => f.TemperatureC > 15) ?? 0;
+    }
+ 
+    private void FilterBySummary(ChangeEventArgs e)//funkcja filtrująca po nazwie
+    {
+        var searchTerm = e.Value?.ToString();
+        
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            RestoreForecasts();
+            return;
+        }
+        
+        forecasts = originalForecasts?
+            .Where(f => f.Summary.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+            
+        warmDays = forecasts?.Count(f => f.TemperatureC > 15) ?? 0;
+    }
+
+    public class WeatherForecast
+    {
+        public DateOnly Date { get; set; }
+        public int TemperatureC { get; set; }
+        public string? Summary { get; set; }
+        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+    }
+
+}
