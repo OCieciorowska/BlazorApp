@@ -9,11 +9,11 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
+       
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
         
-        //dodane
+        
         builder.Services.AddAuthentication(
                 CertificateAuthenticationDefaults.AuthenticationScheme)
             .AddCertificate();
@@ -36,7 +36,7 @@ public class Program
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode();
     
-        //dodane 
+        
     app.UseAuthentication();
     app.UseAuthorization();
     
